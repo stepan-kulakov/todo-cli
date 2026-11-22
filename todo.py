@@ -1,5 +1,6 @@
 import json
 from pathlib import Path
+from typing import Optional
 
 TASKS_FILE = Path("tasks.json")
 
@@ -38,6 +39,42 @@ def list_tasks(tasks: list[dict]) -> None:
         print(f"{task['id']}. [{mark}] {task['title']}")
 
 
+def find_task(tasks: list[dict], task_id: int) -> Optional[dict]:
+    """Return the task with the given id, or None if it does not exist."""
+    for task in tasks:
+        if task["id"] == task_id:
+            return task
+    return None
+
+
+def complete_task(tasks: list[dict], task_id: int) -> bool:
+    """Mark a task as done. Return False if the id does not exist."""
+    task = find_task(tasks, task_id)
+    if task is None:
+        return False
+    task["done"] = True
+    return True
+
+
+def delete_task(tasks: list[dict], task_id: int) -> bool:
+    """Remove a task. Return False if the id does not exist."""
+    task = find_task(tasks, task_id)
+    if task is None:
+        return False
+    tasks.remove(task)
+    return True
+
+
+def read_task_id(prompt: str) -> Optional[int]:
+    """Ask for a task id. Return None if the input is not a number."""
+    raw = input(prompt).strip()
+    try:
+        return int(raw)
+    except ValueError:
+        print("Task id must be a number.")
+        return None
+
+
 def main() -> None:
     tasks = load_tasks()
     while True:
@@ -45,8 +82,10 @@ def main() -> None:
         print("Todo list")
         print("1. Show tasks")
         print("2. Add task")
-        print("3. Quit")
-        choice = input("Choose 1, 2 or 3: ").strip()
+        print("3. Mark task as done")
+        print("4. Delete task")
+        print("5. Quit")
+        choice = input("Choose 1-5: ").strip()
 
         if choice == "1":
             list_tasks(tasks)
@@ -59,10 +98,26 @@ def main() -> None:
             else:
                 print("Title cannot be empty.")
         elif choice == "3":
+            task_id = read_task_id("Task id to mark as done: ")
+            if task_id is not None:
+                if complete_task(tasks, task_id):
+                    save_tasks(tasks)
+                    print("Task marked as done.")
+                else:
+                    print("No task with that id.")
+        elif choice == "4":
+            task_id = read_task_id("Task id to delete: ")
+            if task_id is not None:
+                if delete_task(tasks, task_id):
+                    save_tasks(tasks)
+                    print("Task deleted.")
+                else:
+                    print("No task with that id.")
+        elif choice == "5":
             print("Goodbye!")
             break
         else:
-            print("Invalid choice, enter 1, 2 or 3.")
+            print("Invalid choice, enter a number from 1 to 5.")
 
 
 if __name__ == "__main__":
